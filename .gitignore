@@ -1,0 +1,41 @@
+# --- Data: downloaded or generated, never versioned (see data/README.md) ---
+data/*
+!data/README.md
+*.zip
+
+# --- Generated artifacts: embeddings, weights, training runs, exports ---
+artifacts/
+runs/
+weights/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.tflite
+*.npz
+*.npy
+
+# --- Experiment tracking / cluster logs ---
+mlruns/
+wandb/
+slurm-*.out
+slurm-*.err
+logs/
+
+# --- Secrets (ROBOFLOW_API_KEY etc. go in env vars, never in the repo) ---
+.env
+.env.*
+*.key
+
+# --- Python / notebooks ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+
+# --- OS / editors ---
+.DS_Store
+.vscode/
+.idea/

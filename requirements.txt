@@ -1,0 +1,9 @@
+# Pipeline de datos + rama ML (lo que hoy usa src/). Se amplía cuando entren YOLO, la rama DL y la app.
+# torch/torchvision: en Apolo instalar la build CUDA que corresponda al driver (CUDA 12.x).
+numpy
+pandas
+pillow
+pyyaml
+scikit-learn
+torch
+torchvision
