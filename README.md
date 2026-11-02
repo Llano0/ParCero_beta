@@ -26,7 +26,7 @@ foto → YOLO (detecta huevos) → recortes ─┬─ rama ML: DINOv2 + ML clás
 │   │   └── machine-learning/   notebook, video, presentación
 │   └── referencias/            papers, ficha técnica, material de la UPB
 ├── src/
-│   ├── data/                   descarga → filtrado y split → recortes
+│   ├── data/                   download_chula.sh → filter_classes.py → crop_eggs.py
 │   ├── embeddings/             extracción DINOv2 (rama ML)
 │   ├── detection/              YOLO
 │   ├── classification/         CNN / ViT (rama DL)
@@ -52,13 +52,16 @@ pip install -r requirements.txt
 Todos los comandos se corren desde la raíz del repo.
 
 1. **Descargar** Chula completo (copia en Roboflow `parasites-onxa6/parasites-trgfz`,
-   versión 1, formato YOLOv8, CC BY 4.0, ~470 MB):
+   versión 1, formato YOLOv8, CC BY 4.0, ~470 MB). Solo necesita `bash`, `curl` y
+   `python3`; en Apolo se corre desde el nodo de login:
    ```bash
    export ROBOFLOW_API_KEY=...   # nunca se commitea
-   LINK=$(curl -s "https://api.roboflow.com/parasites-onxa6/parasites-trgfz/1/yolov8?api_key=$ROBOFLOW_API_KEY" \
-     | python3 -c "import json,sys; print(json.load(sys.stdin)['export']['link'])")
-   curl -L -o chula.zip "$LINK" && python3 -m zipfile -e chula.zip data/roboflow && rm chula.zip
+   bash src/data/download_chula.sh data/roboflow
    ```
+   El script no sobrescribe: si `data/roboflow` ya tiene archivos, se detiene. Descarga y
+   descomprime en una carpeta temporal, verifica que estén `data.yaml` y los tres splits,
+   y solo entonces la mueve a `data/roboflow`. Al final muestra las clases y cuántas fotos
+   hay por split de Roboflow (ese split no se usa; el nuestro sale del paso 2).
 2. **Filtrar a 3 clases y particionar** (70/15/15 por foto original, seed 42; YOLO +
    COCO; solo usa la librería estándar):
    ```bash
@@ -75,16 +78,24 @@ Todos los comandos se corren desde la raíz del repo.
    Si salen otros números, el split no es el del equipo. `data/raw/data.yaml` sirve
    directo para YOLO (`nc: 3`); cada split trae `_annotations.coco.json` (ids COCO
    1=ascaris, 2=hookworm, 3=trichuris).
-3. **Recortar cada huevo** (margen 15 %, formato ImageFolder + `crops.csv`):
+3. **Recortar cada huevo** (margen 15 %, formato ImageFolder + `crops.csv`; necesita
+   `pillow` y `pyyaml` de `requirements.txt`):
    ```bash
-   python src/data/crop_eggs.py
+   python3 src/data/crop_eggs.py --raw data/raw --out data/crops --margin 0.15
    ```
 4. **Embeddings DINOv2** (rama ML):
    ```bash
-   python src/embeddings/extract_embeddings.py --model dinov2_vitb14
+   python3 src/embeddings/extract_embeddings.py --crops-csv data/crops/crops.csv \
+     --model dinov2_vitb14 --out-dir artifacts/embeddings
    ```
    → `artifacts/embeddings/dinov2_vitb14_224.npz` con `cls` y `patch_mean`, alineados
    con `labels`, `splits` y `groups` (foto original, para `StratifiedGroupKFold`).
+
+**Análisis exploratorio:** [`notebooks/eda_dataset.ipynb`](notebooks/eda_dataset.ipynb) (después de
+los pasos 1 y 2; sin GPU, ~2 min en el nodo de login de Apolo):
+```bash
+jupyter nbconvert --to notebook --execute --inplace notebooks/eda_dataset.ipynb
+```
 
 ## Reglas
 

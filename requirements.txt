@@ -7,3 +7,7 @@ pyyaml
 scikit-learn
 torch
 torchvision
+# Notebooks (EDA y entregable ML)
+matplotlib
+ipykernel
+nbconvert

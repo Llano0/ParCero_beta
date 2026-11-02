@@ -1,18 +1,3 @@
-"""Crop every egg from a Roboflow YOLO export into its own image.
-
-Input layout (Roboflow "YOLOv8" export):
-    data/raw/data.yaml
-    data/raw/{train,valid,test}/images/*.jpg
-    data/raw/{train,valid,test}/labels/*.txt   # cls cx cy w h (normalized)
-
-Output:
-    data/crops/<split>/<label>/<image_stem>_<i>.png
-    data/crops/crops.csv   # one row per crop, used by every later step
-
-Usage:
-    python src/data/crop_eggs.py --raw data/raw --out data/crops --margin 0.15
-"""
-
 import argparse
 import csv
 from collections import Counter, defaultdict
@@ -21,7 +6,6 @@ from pathlib import Path
 import yaml
 from PIL import Image
 
-# Keyword in the dataset class name -> label we use. Anything else is dropped.
 TARGET_CLASSES = {
     "ascaris": "ascaris",
     "trichuris": "trichuris",
@@ -134,7 +118,6 @@ def main():
         writer.writeheader()
         writer.writerows(rows)
 
-    # --- Summary ---------------------------------------------------------
     print(f"\n{len(rows)} crops written to {args.out}; skipped: {dict(skipped)}")
     counts = Counter((r["split"], r["label"]) for r in rows)
     labels = sorted({r["label"] for r in rows})

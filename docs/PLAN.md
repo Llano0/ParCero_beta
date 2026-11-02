@@ -177,18 +177,18 @@ versión sin redimensionar (o "Fit (black edges)"), que además daría más reso
 
 ### 5.3 Pipeline de datos
 
-Descarga (comandos completos en el README):
+Descarga (detalles en el README):
 
 ```bash
 export ROBOFLOW_API_KEY=...          # nunca se commitea
-LINK=$(curl -s "https://api.roboflow.com/parasites-onxa6/parasites-trgfz/1/yolov8?api_key=$ROBOFLOW_API_KEY" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['export']['link'])")
-curl -L -o chula.zip "$LINK" && python3 -m zipfile -e chula.zip data/roboflow && rm chula.zip   # ~470 MB
+bash src/data/download_chula.sh data/roboflow   # ~470 MB
 ```
 
 Flujo:
 
 ```
+   │  src/data/download_chula.sh   descarga del export YOLOv8 de Roboflow
+   ▼
 data/roboflow/             export completo (11 clases, 10 000 fotos)
    │  src/data/filter_classes.py   3 clases, ids 0..2, split 70/15/15 por foto, seed 42
    ▼
@@ -495,7 +495,7 @@ Alcance de implementación **[Pendiente §16]**: si es demo del curso, se implem
 | Dónde | Para qué | Detalles |
 |---|---|---|
 | Mac de Jero (M5 Pro, 24 GB) | Desarrollo, pipeline de datos, rama ML | conda `machine-learning-test` (Python 3.14, torch 2.14 + MPS, scikit-learn 1.9, pyyaml). Pesos de DINOv2 en `~/.cache/torch/hub`. |
-| **Apolo III** (EAFIT) **[Decidido, en lugar de Colab]** | Entrenamiento de YOLO y rama DL, CV, barridos | Slurm + Lmod; partición **`accel`**, nodo `a3-accel-0`, **2× H100 NVL 94 GB**, CUDA 12.9, límite **3 días** por trabajo. Nodos de cómputo probablemente **sin internet**: descargar pesos desde el nodo de login. |
+| **Apolo III** (EAFIT) **[Decidido, en lugar de Colab]** | Entrenamiento de YOLO y rama DL, CV, barridos | Slurm + Lmod; partición **`accel`**, nodo `a3-accel-0`, **2× H100 NVL 94 GB**, CUDA 12.9, límite **3 días** por trabajo. Nodos de cómputo que se asumen **sin internet** (por confirmar en la primera corrida): descargar datos y pesos desde el nodo de login. |
 | Laptop de campo (sin GPU) | Inferencia offline | ONNX Runtime + interfaz local. |
 
 - **Framework [Decidido]:** PyTorch (+ Ultralytics para YOLO). Las H100 sobran para estos
@@ -517,7 +517,7 @@ Alcance de implementación **[Pendiente §16]**: si es demo del curso, se implem
 │   │   └── machine-learning/ notebook, video, presentación + checklist
 │   └── referencias/          papers, ficha técnica, material de la UPB
 ├── src/
-│   ├── data/                 filter_classes.py, crop_eggs.py
+│   ├── data/                 download_chula.sh, filter_classes.py, crop_eggs.py
 │   ├── embeddings/           extract_embeddings.py (rama ML)
 │   ├── detection/            YOLO
 │   ├── classification/       rama DL
@@ -688,8 +688,10 @@ la forma. *Fuga de datos:* imágenes iguales o casi iguales en entrenamiento y p
 **Referencias** (por completar con citas formales):
 
 - Chula-ParasiteEgg-11 — ICIP 2022 Challenge *Parasitic Egg Detection and Classification
-  in Microscopic Images*; copia en Roboflow:
-  https://universe.roboflow.com/research-t0os5/test-parasite-egg-detection (CC BY 4.0).
+  in Microscopic Images*; copia completa en Roboflow (fuente usada, §5.2):
+  https://universe.roboflow.com/parasites-onxa6/parasites-trgfz (v1, CC BY 4.0). Primera
+  fuente, reemplazada (§5.4):
+  https://universe.roboflow.com/research-t0os5/test-parasite-egg-detection.
 - ParasitoBank (Universidad del Cauca); CDC DPDx; Atlas de Parasitología LACES (UFG).
 - OMS — infecciones por geohelmintos; método Kato-Katz y umbrales de intensidad.
 - Estudio de parasitosis intestinal en comunidades indígenas del Chocó (*Enferm. Infecc.

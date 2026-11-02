@@ -24,7 +24,7 @@ interfaz local en laptop).
 | `docs/PLAN.md` | Plan maestro |
 | `docs/entregas/{deep-learning,machine-learning}/` | Entregables y checklist de cada materia |
 | `docs/referencias/` | Papers, ficha técnica, material de la UPB |
-| `src/data/` | `filter_classes.py` (3 clases + split + YOLO/COCO), `crop_eggs.py` |
+| `src/data/` | `download_chula.sh` (descarga), `filter_classes.py` (3 clases + split + YOLO/COCO), `crop_eggs.py` |
 | `src/embeddings/` | `extract_embeddings.py` (DINOv2) |
 | `src/detection/`, `src/classification/`, `src/app/` | YOLO, rama DL, app |
 | `notebooks/` | `model_development.ipynb` (entregable ML) y exploración |
@@ -39,7 +39,8 @@ la raíz del repo.
 - **Mac de Jero:** conda `machine-learning-test` (Python 3.14, torch con MPS,
   scikit-learn, pyyaml). Python del env: `/opt/miniconda3/envs/machine-learning-test/bin/python`.
 - **Apolo III:** Slurm + Lmod; partición `accel` (nodo `a3-accel-0`, 2× H100 NVL 94 GB,
-  CUDA 12.9, límite 3 días). Los nodos de cómputo **no tienen internet**: datos y pesos
+  CUDA 12.9, límite 3 días). Los nodos de cómputo se asumen **sin internet** (por confirmar en la
+  primera corrida): datos y pesos
   (YOLO, DINOv2 vía `torch.hub`, backbones de la rama DL) se descargan antes desde el
   nodo de login. Los `sbatch` van en `scripts/apolo/`.
 

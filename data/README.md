@@ -5,7 +5,7 @@ archivo. Cada integrante y cada máquina (Mac, Apolo) lo reconstruye igual.
 
 ```
 data/
-├── roboflow/        export YOLOv8 de Chula completo (11 clases) — descarga, ver README raíz
+├── roboflow/        export YOLOv8 de Chula completo (11 clases) ← src/data/download_chula.sh
 ├── raw/             3 clases + split fijo (YOLO + COCO)       ← src/data/filter_classes.py
 ├── crops/           un recorte por huevo (ImageFolder) + crops.csv ← src/data/crop_eggs.py
 └── external/        fotos externas (UPB / campo), solo para prueba final
