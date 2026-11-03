@@ -7,7 +7,7 @@
 >
 > Documento vivo y **fuente única** de contexto y decisiones. Integra la *Ficha técnica*
 > preliminar del equipo (oct-2026); donde hay diferencias, prevalece lo decidido aquí
-> (ver §15). Última actualización: 2026-10-27.
+> (ver §15). Última actualización: 2026-11-02.
 >
 > Convención: **[Decidido]** acordado por el equipo · **[Propuesta]** sugerido, por
 > confirmar · **[De la ficha]** aportado por la ficha técnica, incorporado ·
@@ -340,6 +340,8 @@ contra la cabeza de clasificación del propio YOLO (baseline).
 
 - **Extractor:** DINOv2 **ViT-S/14** (384-d, liviano) y **ViT-B/14** (768-d). Se guardan
   CLS y media de parches. Implementado: `src/embeddings/extract_embeddings.py` (ViT-B/14 probado).
+- **Implementado (2-nov):** `notebooks/model_development.ipynb`. SVM lineal, F1 macro 0,990 (CV y `valid`) y
+  0,998 en `test`; conteo exacto en el 96,6 % de las fotos de `test` con YOLO + SVM.
 - **Preprocesamiento:** `StandardScaler`, normalización L2, **PCA** (curva de varianza).
 - **No supervisado:** PCA/t-SNE para visualizar; **K-Means**, **jerárquico**,
   **DBSCAN** (outliers / posibles errores de etiqueta); ARI y NMI contra las etiquetas.
@@ -566,7 +568,8 @@ comparación + muestras externas.
 
 | Entregable | Fecha | Contenido |
 |---|---|---|
-| Entregas registradas | **3-nov** y **19-nov-2026** | **[Pendiente: qué se entrega en cada fecha]** |
+| Entrega completa | **3-nov-2026** | Notebook, repo y video ([checklist](entregas/machine-learning/README.md)) |
+| Presentación | **19-nov-2026** | 50 % de la nota |
 | Video demo | — | 2 min, modelo desplegado + interfaz |
 | Repositorio + `model_development.ipynb` | — | Paso a paso, EDA profundo, justificación de decisiones |
 | Presentación final | — | 50 % de la nota: problema, metodología, selección de modelo, generalización, métricas, despliegue, reajuste |
@@ -636,6 +639,12 @@ imágenes de pacientes).
 | 2026-10-27 | Clase "otro / sin parásito", Grad-CAM, detector de atajos, criterios de éxito (de la ficha). | Incorporado |
 | 2026-10-27 | Corregir duplicados por reflejo con la opción A. | Descartado (la fuente nueva no tiene reflejos) |
 | 2026-10-27 | DINOv2-S vs B; red liviana EfficientNet-B0 / MobileNetV3. | Propuesta |
+| 2026-11-01 | Detector: YOLO11n de **una clase** (`item` = huevo) con aumentos de color y de celular (`h_single_aug`); umbral 0,25 (`compare_detectors.ipynb`). | Decidido |
+| 2026-11-02 | Apolo sin VPN: la rama ML (recortes del detector, embeddings, modelos, app) se corre **en local**; los pesos de YOLO se trajeron de Apolo. Resultados idénticos a los de Apolo en `valid`. | Decidido |
+| 2026-11-02 | Clasificador de la rama ML: **SVM lineal** (`C` = 0,003, 768 dimensiones de DINOv2 ViT-B/14 `cls`), elegido entre 6 familias por CV agrupada (`model_development.ipynb` §5). | Decidido |
+| 2026-11-02 | Rechazo "consulte a un experto": confianza < 0,68 o similitud con el entrenamiento < 0,71 (percentil 1 de los huevos de `valid`). Los dudosos no se suman solos al conteo. | Decidido |
+| 2026-11-02 | App offline en **Gradio** (`src/app/app.py`); registro local sin fotos para el monitoreo de *drift* (§9). | Decidido |
+| 2026-11-02 | Entrega ML del 3-nov = todo (notebook, repo, video); presentación el 19-nov. | Decidido |
 
 ---
 
@@ -661,7 +670,7 @@ receta, evaluación, ética) se incorporó.
 
 1. ¿Vale la pena hacer *fork* sin estiramiento para quitar la deformación del ~7 % (§5.2)?
 2. Número de grupo (correo de DL) y reparto de roles entre los tres.
-3. Qué se entrega en ML el 3-nov y el 19-nov.
+3. ~~Qué se entrega en ML el 3-nov y el 19-nov.~~ Resuelto: todo el 3-nov; presentación el 19-nov.
 4. ¿El profesor de ML acepta una app local offline como "modelo desplegado" o exige un
    enlace público?
 5. ¿La app es demo del curso o se busca uso real por una brigada? (Define cuánto se

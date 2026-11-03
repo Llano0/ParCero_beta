@@ -42,6 +42,9 @@ foto → YOLO (detecta huevos) → recortes ─┬─ rama ML: DINOv2 + ML clás
 - **Mac (desarrollo):** conda `machine-learning-test` (Python 3.14, torch con MPS).
 - **Apolo III (entrenamiento):** partición `accel` (2× H100). Los nodos de cómputo no
   tienen internet: descargar datos y pesos desde el nodo de login.
+- **Nota macOS/conda:** torch (pip) y scikit-learn (conda) traen dos copias de OpenMP. En un mismo proceso
+  que ya usó KMeans o t-SNE, cargar DINOv2 se cuelga; `model_development.ipynb` fija `OMP_NUM_THREADS=1` al
+  inicio por eso.
 
 ```bash
 pip install -r requirements.txt
@@ -96,6 +99,41 @@ los pasos 1 y 2; sin GPU, ~2 min en el nodo de login de Apolo):
 ```bash
 jupyter nbconvert --to notebook --execute --inplace notebooks/eda_dataset.ipynb
 ```
+
+## Rama ML: modelo y app (entrega de Machine Learning)
+
+Todo corre en una laptop, sin GPU y sin internet una vez descargados los datos y los pesos.
+
+1. **Pesos del detector** (YOLO11n de una clase, entrenado en Apolo; no se versionan): copiarlos en
+   `artifacts/yolo/h_single_aug/weights/best.pt`. La elección del detector está en
+   [`notebooks/compare_detectors.ipynb`](notebooks/compare_detectors.ipynb).
+2. **Preparar recortes y embeddings** (pasos 2–4 de arriba, más los recortes del detector en `valid` y `test`;
+   salta lo que ya existe):
+   ```bash
+   bash scripts/local/prepare_ml.sh
+   ```
+3. **Entrenar, evaluar y exportar el modelo:**
+   [`notebooks/model_development.ipynb`](notebooks/model_development.ipynb), el entregable del curso (EDA,
+   no supervisado, selección del modelo, generalización, métricas, SHAP, despliegue y reajuste). Guarda el
+   paquete del modelo en `artifacts/ml/egg_classifier.joblib`. ~2 min:
+   ```bash
+   jupyter nbconvert --to notebook --execute --inplace notebooks/model_development.ipynb
+   ```
+4. **App offline** (Gradio, en español, para personal sin formación técnica):
+   ```bash
+   python src/app/app.py          # http://127.0.0.1:7860
+   python src/app/app.py --lan    # también desde un celular conectado al hotspot de la laptop
+   ```
+   Foto → cajas con especie y confianza → aviso "consulte a un experto" en los dudosos → conteo por lámina,
+   HPG estimado (× 24) e intensidad OMS. No guarda las fotos; registra las señales del modelo en
+   `artifacts/app_logs/predictions.csv` para el monitoreo de *drift*.
+
+| Resultado (sale del notebook) | |
+|---|---|
+| Modelo | SVM lineal sobre embeddings DINOv2 ViT-B/14 |
+| F1 macro: CV agrupada / `valid` / `test` | 0,990 / 0,990 / 0,998 |
+| Conteo exacto por foto en `test` (YOLO + SVM) | 96,6 % de 409 fotos |
+| Tiempo por foto en CPU | ~90 ms |
 
 ## Reglas
 
