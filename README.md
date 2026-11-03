@@ -128,6 +128,15 @@ Todo corre en una laptop, sin GPU y sin internet una vez descargados los datos y
    HPG estimado (× 24) e intensidad OMS. No guarda las fotos; registra las señales del modelo en
    `artifacts/app_logs/predictions.csv` para el monitoreo de *drift*.
 
+   **Muestras (Kato-Katz, dos láminas por muestra).** La app guarda cada muestra en una base SQLite local
+   (`artifacts/app_data/muestras.db`, no versionada; `--db otra.db` usa otra, p. ej. para pruebas). Se crea
+   la muestra con un **código anónimo** (nunca el nombre del paciente), se marca **Lámina 1** o **Lámina 2** y
+   cada foto analizada se suma a esa lámina. Resultado por especie: huevos de cada lámina, promedio,
+   **HPG = promedio × 24** e intensidad OMS; si solo hay una lámina, el HPG usa esa y la app lo avisa. Los
+   huevos dudosos quedan "por revisar" y no entran al conteo. Una foto no se puede sumar dos veces a la misma
+   muestra. El historial se exporta a CSV desde la app. No se guardan fotos: solo un *hash* de cada foto y la
+   especie y señales de sus huevos. Código en [`src/app/samples_db.py`](src/app/samples_db.py).
+
 | Resultado (sale del notebook) | |
 |---|---|
 | Modelo | SVM lineal sobre embeddings DINOv2 ViT-B/14 |
