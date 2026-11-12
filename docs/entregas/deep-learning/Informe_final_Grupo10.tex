@@ -1,0 +1,177 @@
+% Informe final — Redes Neuronales y Aprendizaje Profundo, EAFIT 2026-2, Grupo 10
+% Máximo 3 páginas. La figura está en figuras/ (sale de dl/notebooks/comparison.ipynb).
+% Todas las cifras salen de los notebooks de dl/notebooks/.
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage[margin=1.6cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figuras/}}
+\captionsetup{font=small,labelfont=bf,skip=3pt}
+\setlist{nosep,leftmargin=*}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.4em}{}
+
+% Si falta la imagen, deja un recuadro en vez de romper la compilación.
+\newcommand{\figura}[2]{\IfFileExists{figuras/#1}{\includegraphics[width=#2]{#1}}{\fbox{\parbox{#2}{\centering\small Falta figuras/#1}}}}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Detección y clasificación de huevos de geohelmintos\\en fotos de microscopio tomadas con celular}\\[3pt]
+Samuel Llano Madrigal, Laura Andrea Castrillón, Jerónimo Campuzano y David Bejman --- Grupo 10\\
+Redes Neuronales y Aprendizaje Profundo, Universidad EAFIT, 2026-2 --- 11 de noviembre de 2026
+\end{center}
+
+\section{Problema y objetivos}
+
+\textit{Ascaris lumbricoides}, \textit{Trichuris trichiura} y las uncinarias infectan a cerca de 1.500 millones de personas (OMS, 2023). Se diagnostican buscando sus huevos al microscopio, lo que exige un microscopista entrenado que en zonas como el Chocó no siempre está. Proponemos que, a partir de una foto tomada con celular por el ocular, una red encuentre los huevos y diga de qué especie son, como \textbf{apoyo} al personal de salud y nunca como diagnóstico.
+
+\textbf{Objetivo general.} Desarrollar y evaluar un sistema de Deep Learning que, a partir de fotos de microscopio tomadas con celular, detecte, clasifique y cuente huevos de \textit{Ascaris}, \textit{Trichuris} y uncinarias, funcione sin internet y mantenga su desempeño con imágenes de fuentes distintas a las de entrenamiento.
+
+\textbf{Objetivos específicos.}
+(1) Construir un conjunto de datos reproducible y sin fuga a partir de Chula-ParasiteEgg-11 y entrenar un detector YOLO con transfer learning.
+(2) Entrenar y comparar, sobre los mismos recortes, una CNN desde cero, VGG16 y una red liviana (EfficientNet-B0) con transfer learning, y un ViT, usando F1 macro, matrices de confusión e imágenes externas.
+(3) Evaluar la robustez (brillo y nitidez) e interpretabilidad (Grad-CAM) del mejor modelo e integrarlo en una aplicación offline.
+
+\section{Base de datos y preprocesamiento}
+
+Usamos \textbf{Chula-ParasiteEgg-11} (Universidad Chulalongkorn, reto ICIP 2022; copia de Roboflow, licencia CC BY 4.0), de la que tomamos 3 de sus 11 especies. Las fotos son de 640\,$\times$\,640, casi todas con un solo huevo, y las clases están balanceadas (Tabla~\ref{tab:datos}). La partición es \textbf{por foto original}, así que los recortes de una foto nunca quedan en dos conjuntos; el EDA confirmó que ninguna foto quedó repartida y que no hay fotos idénticas. Detector y clasificadores usan la misma partición, y \texttt{test} se evaluó una sola vez, al final.
+
+\begin{table}[h]
+\centering\small
+\caption{Fotos y, entre paréntesis, huevos por partición (70/15/15, estratificada, semilla 42).}
+\label{tab:datos}
+\begin{tabular}{lrrrr}
+\toprule
+Partición & \textit{Ascaris} & Uncinaria & \textit{Trichuris} & Total \\
+\midrule
+Entrenamiento & 631 (636) & 643 (650) & 638 (638) & 1.912 (1.924) \\
+Validación    & 135 (136) & 138 (140) & 137 (137) &   410 (413) \\
+Prueba        & 136 (138) & 137 (138) & 136 (136) &   409 (412) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Lo que encontró el EDA.} Los huevos son pequeños (mediana del lado mayor de 71\,px en \textit{Trichuris} a 96\,px en \textit{Ascaris}); Roboflow estiró las fotos y quedaron comprimidas $\sim$7\,\% en horizontal; y hay pistas ajenas al huevo: el puntero rojo del ocular aparece en el 10,5\,\% de las fotos de \textit{Ascaris} y en menos del 3\,\% de las demás, y el fondo de la foto por sí solo ayuda a predecir la especie. Por eso las métricas en validación pueden ser optimistas y la prueba que más pesa es la de fotos externas.
+
+\textbf{Preprocesamiento.} Para los clasificadores, cada huevo se recorta con 15\,\% de margen, se rellena a cuadrado con su color medio (sin estirar, porque la forma distingue a las especies), se lleva a 224\,$\times$\,224 y se normaliza con la media y desviación de ImageNet. Aumentos solo en entrenamiento: rotaciones de 90° y espejos (el huevo no tiene ``arriba''), color y brillo $\pm$0,3, y desenfoque y ruido con probabilidad 0,3. El detector usa las fotos completas con los aumentos de Ultralytics (mosaico, volteos, HSV) más una copia de entrenamiento degradada para imitar la foto de celular (desenfoque, ruido, JPEG, viñeta circular y puntero sintético).
+
+\section{Modelos y entrenamiento}
+
+\textbf{Sistema en dos etapas.} Un detector \textbf{YOLO11n de una clase} (``huevo'') encuentra las cajas; cada caja se recorta y un clasificador decide la especie con una confianza (si es menor de 0,65, el huevo va a revisión). Así el clasificador ve el huevo ampliado y casi sin fondo. Como línea base, el mismo YOLO se entrenó con las 3 especies como clases.
+
+\textbf{YOLO11n} (Jocher y Qiu, 2024; 2,6\,M parámetros), preentrenado en COCO: el backbone extrae rasgos (bloques C3k2, SPPF y atención C2PSA), el neck combina tres escalas y la cabeza, sin anclas, predice caja y clase (pérdida CIoU + DFL + BCE). \textit{Modificación:} la cabeza de 80 clases pasa a 1 clase (3 en la línea base).
+
+\textbf{CNN desde cero}, estilo VGG (Simonyan y Zisserman, 2015): 5 bloques de dos convoluciones 3\,$\times$\,3 con BatchNorm y ReLU más MaxPool (32 a 512 canales) y una cabeza de promedio global, dropout 0,3 y capa lineal a 3 clases (4,7\,M parámetros). Salió de una búsqueda de 15 configuraciones. La versión inicial (4 bloques, lr $10^{-3}$) tenía \textbf{subajuste}: F1 de 0,62 en entrenamiento y 0,64 en validación, con la mejor época al final. Ayudó lo que facilita aprender: bajar el lr a $3\cdot10^{-4}$ (0,90), un quinto bloque y más épocas (0,98 con 40); dropout 0,5 y aumento fuerte empeoraron.
+
+\textbf{VGG16 y EfficientNet-B0} (Tan y Le, 2019) preentrenadas en ImageNet. Con solo 1.924 recortes conviene partir de rasgos ya aprendidos y adaptar solo los últimos bloques (Yosinski et al., 2014). \textit{Modificaciones:} se quitó el clasificador original (en VGG16, las capas densas, $\sim$124\,M de sus 138\,M parámetros) y se puso la misma cabeza de la CNN, para que la comparación mida solo el preentrenamiento (quedan 14,7\,M y 4,0\,M). Se entrena en dos fases: primero solo la cabeza con la red congelada; luego se descongelan los últimos bloques con un lr diez veces menor.
+
+\begin{table}[h]
+\centering\small
+\caption{Hiperparámetros. Los tres clasificadores comparten datos, aumentos, cabeza y semillas.}
+\label{tab:hiper}
+\begin{tabular}{llll}
+\toprule
+ & YOLO11n & CNN desde cero & VGG16 y EfficientNet-B0 \\
+\midrule
+Optimizador, lr & AdamW, 0,002 & AdamW, $3\cdot10^{-4}$ con coseno & AdamW; $10^{-3}$ (fase 1), $10^{-4}\!\to\!10^{-5}$ (fase 2) \\
+Épocas (paciencia) & 100 (20) & 100 (20) & 5 + hasta 30 (10) \\
+Pérdida & CIoU + DFL + BCE & Entropía cruzada, label smoothing 0,1 & Igual que la CNN \\
+Regularización & aumentos, mosaico & weight decay 0,01, dropout 0,3 & Igual que la CNN \\
+Lote / semillas & 32 / 42 & 32 / 42, 43, 44 & 32 / 42, 43, 44 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El lr de la CNN fue el mejor de la búsqueda y las 100 épocas se eligieron porque con 40 la mejor época fue la 37; la receta de transfer learning es estándar. La parada temprana usa el F1 macro de validación, nuestra métrica principal porque las tres especies importan igual. \textbf{Equipo:} clúster Apolo III de EAFIT. Clasificadores en GPU NVIDIA H100 NVL (94\,GB): $\sim$3 min por semilla la CNN y $\sim$1 min las preentrenadas. Detectores en CPU: de 6,4 a 8,3 h por corrida. PyTorch 2.13 y Ultralytics 8.4.
+
+\section{Resultados}
+
+\begin{figure}[h]
+\centering
+\figura{curvas_clasificadores.png}{\textwidth}
+\caption{Curvas de los clasificadores (una línea por semilla). Izquierda: pérdida (continua = validación, punteada = entrenamiento). Centro y derecha: F1 macro en validación. Zona gris: fase 1 de las redes preentrenadas.}
+\label{fig:curvas}
+\end{figure}
+
+\textbf{Entrenamiento (Fig.~\ref{fig:curvas}).} Las preentrenadas arrancan mucho mejor: con la red congelada ya llegan a F1 de 0,89 (VGG16) y 0,95 (EfficientNet-B0), y al descongelar suben a $\sim$0,99 (mejor época entre la 10 y la 24). La CNN es más lenta y ruidosa (mejor época entre la 58 y la 84). En la mejor época la brecha entre el F1 de entrenamiento y el de validación es de 0,01 o menos y la pérdida de validación no sube: \textbf{no hay sobreajuste marcado}. El detector converge rápido (precisión, recall y mAP50 cerca de 1 desde la época 15--20).
+
+\begin{table}[h]
+\centering\small
+\caption{Clasificadores en validación (413 recortes) y prueba (412, evaluada una sola vez). ``Conjunto'' = promedio de las 3 semillas, como en la app. Latencia en CPU (8 hilos).}
+\label{tab:clasif}
+\begin{tabular}{lccccccc}
+\toprule
+Red & Parámetros & F1 valid (por semilla) & F1 valid (conjunto) & F1 \textbf{test} & Errores test & ms/recorte & ECE \\
+\midrule
+CNN desde cero  & 4,7\,M  & 0,992 $\pm$ 0,001 & 0,993 & 0,993 & 3 & 11,7 & 0,092 \\
+VGG16           & 14,7\,M & 0,996 $\pm$ 0,003 & 0,998 & 0,995 & 2 & 37,4 & 0,092 \\
+EfficientNet-B0 & 4,0\,M  & 0,994 $\pm$ 0,001 & 0,995 & \textbf{0,998} & 1 & 11,1 & \textbf{0,078} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Datos internos.} El detector de 1 clase logra en validación precisión 0,998, recall 0,992, mAP50 0,995 y mAP50-95 0,923 (el de 3 clases: 0,987, 0,994, 0,995 y 0,917); el mAP50 está saturado y no sirve para elegir. Los tres clasificadores superan 0,99 de F1 en validación y en prueba (Tabla~\ref{tab:clasif}), y la prueba de McNemar no encuentra diferencias significativas entre ningún par ($p \geq 0{,}6$): \textbf{con datos internos no se puede elegir por exactitud}. El error más repetido es \textit{Trichuris} $\to$ \textit{Ascaris}, quizá porque \textit{Trichuris} es el huevo más pequeño y pierde detalle al ampliarlo. Con el umbral de 0,65, EfficientNet-B0 acepta sin revisión el 98,6\,\% de los huevos con exactitud de 0,998.
+
+\textbf{Robustez e interpretabilidad.} Con brillo $\times$1,6 el F1 se mantiene en 0,961 (preentrenadas) y 0,949 (CNN). El desenfoque es el punto débil de las preentrenadas: con radio 2, la CNN da 0,963, EfficientNet-B0 0,924 y VGG16 0,910. En Grad-CAM, EfficientNet-B0 se concentra en el cuerpo del huevo, la CNN mira más bordes y fondo, y en uncinarias todas miran también el fondo (revisión a ojo, sin parasitólogo).
+
+\textbf{Datos externos.} Usamos 98 fotos tomadas con celular por el ocular, de muestras de la UPB, con 101 huevos. Ningún modelo las vio ni se usaron para elegir. Como no tienen cajas dibujadas, la detección se mide por conteo y la especie sobre los huevos encontrados (Tabla~\ref{tab:externas}).
+
+\begin{table}[h]
+\centering\small
+\caption{Sistema completo en las 98 fotos externas (101 huevos; umbral del detector 0,25).}
+\label{tab:externas}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{Fotos completas} & \multicolumn{2}{c}{Recortadas al círculo del ocular} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Ruta & Encontrados & Especie correcta & Encontrados & Especie correcta \\
+\midrule
+YOLO 1 clase + CNN desde cero   & 93 & 85/93 (91,4\,\%) & 100 & 94/100 (94,0\,\%) \\
+YOLO 1 clase + VGG16            & 93 & 90/93 (96,8\,\%) & 100 & 99/100 (99,0\,\%) \\
+YOLO 1 clase + EfficientNet-B0  & 93 & 92/93 (98,9\,\%) & 100 & 98/100 (98,0\,\%) \\
+YOLO 3 clases (línea base)      & 85 & 68/85 (80,0\,\%) &  95 & 85/95 (89,5\,\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Generalización.} Las preentrenadas casi no caen fuera de Chula: EfficientNet-B0 pasa de 0,994 de F1 en validación a 98\,\% de especie correcta, y VGG16 a 99\,\%. La CNN desde cero cae más (94\,\%), probablemente porque, al aprender solo de Chula, depende más del estilo de esas fotos. El YOLO de 3 clases queda muy por debajo y confunde uncinarias con \textit{Ascaris}, porque decide la especie sobre la foto completa, donde el fondo pesa más. Los aumentos que imitan la foto de celular fueron decisivos para el detector: el de 1 clase pasa de 88 a 100 huevos encontrados con ellos (el de 3 clases, de 78 a 95), aunque en validación ambas versiones empataran. La caída se explica por el cambio de microscopio, celular, luz y montaje.
+
+\textbf{Elección.} Como en validación las tres redes empatan, decidió el costo: \textbf{YOLO11n de 1 clase + EfficientNet-B0}, la red más pequeña, igual de rápida que la CNN, unas 3 veces más rápida que VGG16 y la mejor calibrada. Las fotos externas solo confirmaron la elección. El sistema quedó en una app local de demostración (Python y página web, sin internet) que además calcula HPG = huevos $\times$ 24.
+
+\section{Conclusiones}
+
+\begin{itemize}
+  \item \textbf{Objetivo 1, cumplido:} partición por foto sin fuga y un detector que encuentra 100 de 101 huevos en fotos de celular recortadas al ocular.
+  \item \textbf{Objetivo 2, cumplido en parte (el ViT no se alcanzó a hacer):} en datos internos las tres redes son equivalentes (F1 $\geq$ 0,99), pero el preentrenamiento converge en muchas menos épocas y generaliza mejor (98--99\,\% frente a 94\,\% en externas). Separar detección y clasificación supera al YOLO de 3 clases.
+  \item \textbf{Objetivo 3, cumplido en parte:} medimos robustez y Grad-CAM e hicimos la app local; faltan la exportación a ONNX y la revisión de Grad-CAM por un parasitólogo.
+  \item La CNN desde cero tenía subajuste, no sobreajuste: la mejoró facilitar la optimización (lr menor, más bloques y épocas), de 0,64 a 0,99 de F1.
+\end{itemize}
+
+\textbf{Limitaciones.} La prueba externa es pequeña y de una sola fuente, con huevos fotografiados varias veces, especie tomada de la carpeta y conteos sin cajas; además, el recorte al ocular se decidió después de ver resultados, así que esas cifras son algo optimistas. El entrenamiento viene de un solo laboratorio, con fotos estiradas y pistas en el fondo. El desenfoque afecta a las preentrenadas, así que la app debería pedir fotos bien enfocadas. Como mejoras: más fotos externas anotadas por la UPB, aumentos de desenfoque más fuertes y una clase ``no es huevo'' para medir falsas alarmas.
+
+{\footnotesize
+\textbf{Referencias.}
+Anantrasirichai, N. et al. (2022). ICIP 2022 Challenge on Parasitic Egg Detection and Classification in Microscopic Images. arXiv:2208.06063.
+Jocher, G. y Qiu, J. (2024). Ultralytics YOLO11.
+OMS (2023). Infecciones por geohelmintos.
+Simonyan, K. y Zisserman, A. (2015). Very Deep Convolutional Networks for Large-Scale Image Recognition. ICLR.
+Tan, M. y Le, Q. (2019). EfficientNet: Rethinking Model Scaling for CNNs. ICML.
+Yosinski, J. et al. (2014). How transferable are features in deep neural networks? NeurIPS.
+\par}
+
+\end{document}
