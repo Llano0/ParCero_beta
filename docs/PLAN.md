@@ -539,7 +539,7 @@ Alcance de implementación **[Pendiente §16]**: si es demo del curso, se implem
 
 ### 10.2 Equipo y roles
 
-Equipo: **Samuel Llano Madrigal, Laura Andrea Castrillon y Jerónimo Campuzano**. Apoyo
+Equipo: **Samuel Llano Madrigal, Laura Andrea Castrillon, Jerónimo Campuzano y David Bejman**. Apoyo
 académico: área de Microbiología y Parasitología de la UPB.
 
 | Quién | Responsable principal **[Pendiente: confirmar]** |

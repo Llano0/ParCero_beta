@@ -6,7 +6,7 @@ lumbricoides*, *Trichuris trichiura* y uncinarias, sin necesidad de internet.
 
 Proyecto final de **Machine Learning** y **Redes Neuronales y Deep Learning** (EAFIT
 2026-2), en alianza con Microbiología y Parasitología de la UPB. Equipo: Samuel Llano
-Madrigal, Laura Andrea Castrillon y Jerónimo Campuzano.
+Madrigal, Laura Andrea Castrillon, Jerónimo Campuzano y David Bejman.
 
 **Contexto completo, arquitectura y decisiones: [docs/PLAN.md](docs/PLAN.md).**
 

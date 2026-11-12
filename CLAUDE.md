@@ -3,7 +3,7 @@
 Proyecto final compartido de Machine Learning y Deep Learning (EAFIT 2026-2): detectar,
 clasificar y contar huevos de *Ascaris*, *Trichuris* y uncinarias en fotos de microscopio
 tomadas con celular, con inferencia offline para el Chocó. Equipo: Samuel Llano Madrigal,
-Laura Andrea Castrillon, Jerónimo Campuzano.
+Laura Andrea Castrillon, Jerónimo Campuzano, David Bejman.
 
 **Antes de trabajar, lee [docs/PLAN.md](docs/PLAN.md).** Es la fuente única de contexto y
 decisiones. Lo marcado **[Decidido]** no se vuelve a discutir salvo que el equipo lo pida;
