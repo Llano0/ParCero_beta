@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="316" viewBox="0 0 1180 316" role="img"
+           aria-label="Arquitectura completa: un recorte de 3 por 224 por 224 pasa por 5 bloques convolucionales que reducen el tamaño a la mitad y duplican los canales hasta 512 por 7 por 7; luego promedio global, dropout 0,3 y una capa lineal a 3 clases con softmax.">
+<style>
+  .ink { fill: #15211f; }
+  .dim { fill: #5d6d69; }
+  .t { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
+  .tm { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
+  .tb { font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; }
+  .stroke { stroke: #15211f; fill: none; stroke-width: 1.4; }
+  .stroke-dim { stroke: #5d6d69; fill: none; stroke-width: 1.2; }
+  .map { fill: #1d6e69; }
+  .map-edge { stroke: #1d6e69; fill: none; stroke-width: 1; }
+  .head { fill: #b06a12; }
+  .head-edge { stroke: #b06a12; fill: #ffffff; stroke-width: 1.5; }
+  .head-hollow { stroke: #b06a12; fill: none; stroke-width: 1.2; stroke-dasharray: 2 2; }
+  .box { fill: #ffffff; stroke: #15211f; stroke-width: 1.2; }
+  .box-map { fill: #ffffff; stroke: #1d6e69; stroke-width: 2; }
+  .box-head { fill: #ffffff; stroke: #b06a12; stroke-width: 2; }
+  .mk-ink { fill: #15211f; }
+  .mk-dim { fill: #5d6d69; }
+</style>
+<rect width="1180" height="316" fill="#ffffff"/>
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" class="mk-ink"/>
+          </marker>
+        </defs>
+
+        <!-- group brackets -->
+        <path d="M66,40 V32 H645 V40" class="stroke-dim"/>
+        <text x="355" y="24" text-anchor="middle" class="t dim">Extracción de rasgos · 5 bloques · 4.714.208 parámetros</text>
+        <path d="M700,40 V32 H1040 V40" class="stroke-dim"/>
+        <text x="870" y="24" text-anchor="middle" class="t dim">Cabeza · 1.539 parámetros</text>
+
+        <!-- feature volumes: front face + top + side; height in log scale of the spatial size -->
+        <g>
+          <!-- input 3x224x224 -->
+          <polygon points="66,60 74,52 82,52 74,60" class="map" fill-opacity="0.12"/>
+          <polygon points="74,60 82,52 82,252 74,260" class="map" fill-opacity="0.2"/>
+          <rect x="66" y="60" width="8" height="200" class="map" fill-opacity="0.15"/>
+          <rect x="66" y="60" width="8" height="200" class="map-edge"/>
+          <!-- block 1: 32x112x112 -->
+          <polygon points="168,76 176,68 190,68 182,76" class="map" fill-opacity="0.2"/>
+          <polygon points="182,76 190,68 190,236 182,244" class="map" fill-opacity="0.3"/>
+          <rect x="168" y="76" width="14" height="168" class="map" fill-opacity="0.25"/>
+          <rect x="168" y="76" width="14" height="168" class="map-edge"/>
+          <!-- block 2: 64x56x56 -->
+          <polygon points="270,92 278,84 298,84 290,92" class="map" fill-opacity="0.3"/>
+          <polygon points="290,92 298,84 298,220 290,228" class="map" fill-opacity="0.42"/>
+          <rect x="270" y="92" width="20" height="136" class="map" fill-opacity="0.36"/>
+          <rect x="270" y="92" width="20" height="136" class="map-edge"/>
+          <!-- block 3: 128x28x28 -->
+          <polygon points="371,108 379,100 407,100 399,108" class="map" fill-opacity="0.4"/>
+          <polygon points="399,108 407,100 407,204 399,212" class="map" fill-opacity="0.55"/>
+          <rect x="371" y="108" width="28" height="104" class="map" fill-opacity="0.48"/>
+          <rect x="371" y="108" width="28" height="104" class="map-edge"/>
+          <!-- block 4: 256x14x14 -->
+          <polygon points="473,124 481,116 519,116 511,124" class="map" fill-opacity="0.5"/>
+          <polygon points="511,124 519,116 519,188 511,196" class="map" fill-opacity="0.68"/>
+          <rect x="473" y="124" width="38" height="72" class="map" fill-opacity="0.6"/>
+          <rect x="473" y="124" width="38" height="72" class="map-edge"/>
+          <!-- block 5: 512x7x7 -->
+          <polygon points="587,140 595,132 645,132 637,140" class="map" fill-opacity="0.62"/>
+          <polygon points="637,140 645,132 645,172 637,180" class="map" fill-opacity="0.82"/>
+          <rect x="587" y="140" width="50" height="40" class="map" fill-opacity="0.75"/>
+          <rect x="587" y="140" width="50" height="40" class="map-edge"/>
+        </g>
+
+        <!-- arrows between volumes, labelled with the block that produces the next one -->
+        <g class="stroke">
+          <line x1="86" y1="160" x2="162" y2="160" marker-end="url(#arr)"/>
+          <line x1="194" y1="160" x2="264" y2="160" marker-end="url(#arr)"/>
+          <line x1="302" y1="160" x2="365" y2="160" marker-end="url(#arr)"/>
+          <line x1="411" y1="160" x2="467" y2="160" marker-end="url(#arr)"/>
+          <line x1="523" y1="160" x2="581" y2="160" marker-end="url(#arr)"/>
+          <line x1="649" y1="160" x2="722" y2="160" marker-end="url(#arr)"/>
+          <line x1="746" y1="160" x2="822" y2="160" marker-end="url(#arr)"/>
+          <line x1="846" y1="160" x2="943" y2="117" marker-end="url(#arr)"/>
+          <line x1="846" y1="160" x2="942" y2="160" marker-end="url(#arr)"/>
+          <line x1="846" y1="160" x2="943" y2="203" marker-end="url(#arr)"/>
+        </g>
+        <g class="t ink" text-anchor="middle">
+          <text x="124" y="151">Bloque 1</text>
+          <text x="229" y="151">Bloque 2</text>
+          <text x="333" y="151">Bloque 3</text>
+          <text x="439" y="151">Bloque 4</text>
+          <text x="552" y="151">Bloque 5</text>
+          <text x="685" y="151">promedio</text>
+          <text x="784" y="151">dropout 0,3</text>
+          <text x="884" y="122">lineal 512→3</text>
+        </g>
+
+        <!-- pooled vector: 8 cells standing for 512 values -->
+        <g>
+          <rect x="724" y="97"  width="12" height="14" class="head-edge"/>
+          <rect x="724" y="113" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="129" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="145" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="161" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="177" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="193" width="12" height="14" class="head-edge"/>
+          <rect x="724" y="209" width="12" height="14" class="head-edge"/>
+        </g>
+        <!-- after dropout: some values switched off (only while training) -->
+        <g>
+          <rect x="824" y="97"  width="12" height="14" class="head-edge"/>
+          <rect x="824" y="113" width="12" height="14" class="head-hollow"/>
+          <rect x="824" y="129" width="12" height="14" class="head-edge"/>
+          <rect x="824" y="145" width="12" height="14" class="head-edge"/>
+          <rect x="824" y="161" width="12" height="14" class="head-hollow"/>
+          <rect x="824" y="177" width="12" height="14" class="head-edge"/>
+          <rect x="824" y="193" width="12" height="14" class="head-hollow"/>
+          <rect x="824" y="209" width="12" height="14" class="head-edge"/>
+        </g>
+
+        <!-- outputs -->
+        <circle cx="960" cy="115" r="14" class="head" fill-opacity="0.9"/>
+        <circle cx="960" cy="160" r="14" class="head" fill-opacity="0.9"/>
+        <circle cx="960" cy="205" r="14" class="head" fill-opacity="0.9"/>
+        <g class="t ink">
+          <text x="984" y="119"><tspan font-style="italic">Ascaris</tspan></text>
+          <text x="984" y="164">uncinaria</text>
+          <text x="984" y="209"><tspan font-style="italic">Trichuris</tspan></text>
+        </g>
+        <path d="M1052,103 H1058 V217 H1052" class="stroke-dim"/>
+        <g class="t ink">
+          <text x="1068" y="154" class="tb">softmax</text>
+          <text x="1068" y="172">especie y</text>
+          <text x="1068" y="188">confianza</text>
+        </g>
+
+        <!-- shapes under each stage -->
+        <g class="tm dim" text-anchor="middle">
+          <text x="70"  y="288">3 × 224²</text>
+          <text x="175" y="288">32 × 112²</text>
+          <text x="280" y="288">64 × 56²</text>
+          <text x="385" y="288">128 × 28²</text>
+          <text x="492" y="288">256 × 14²</text>
+          <text x="612" y="288">512 × 7²</text>
+          <text x="730" y="288">512</text>
+          <text x="830" y="288">512</text>
+          <text x="960" y="288">3</text>
+        </g>
+        <g class="t dim" text-anchor="middle">
+          <text x="70"  y="305">recorte RGB</text>
+          <text x="730" y="305">vector</text>
+          <text x="830" y="305">vector</text>
+          <text x="960" y="305">clases</text>
+        </g>
+      </svg>

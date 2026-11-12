@@ -18,30 +18,35 @@ foto → YOLO (detecta huevos) → recortes ─┬─ rama ML: DINOv2 + ML clás
 
 ## Estructura
 
+Una carpeta por pieza del sistema, siguiendo el recorrido del proyecto. Cada una lleva su código
+(`src/`), sus notebooks, sus scripts de Slurm (`scripts/`) y lo que genera (`outputs/`, no
+versionado), y tiene su propio README.
+
 ```
-├── docs/
-│   ├── PLAN.md                 plan maestro (fuente única de contexto y decisiones)
-│   ├── entregas/
-│   │   ├── deep-learning/      correo de objetivos, informe, presentación
-│   │   └── machine-learning/   notebook, video, presentación
-│   └── referencias/            papers, ficha técnica, material de la UPB
-├── src/
-│   ├── data/                   download_chula.sh → filter_classes.py → crop_eggs.py
-│   ├── embeddings/             extracción DINOv2 (rama ML)
-│   ├── detection/              YOLO
-│   ├── classification/         CNN / ViT (rama DL)
-│   └── app/                    app offline (ONNX + interfaz local)
-├── notebooks/                  model_development.ipynb (entregable ML) y exploración
-├── scripts/apolo/              trabajos Slurm y preparación del entorno en Apolo III
-├── data/                       (no versionado) ver data/README.md
-└── artifacts/                  (no versionado) embeddings, pesos, corridas, exportes
+├── docs/         PLAN.md (plan maestro) y entregas/ por materia
+├── data/         (no versionado) los datos: roboflow, raw, aug, crops, external; ver data/README.md
+├── logs/         logs de Slurm por componente: logs/{data_prep,detector,ml,dl}/ (los .out no se versionan)
+│
+├── data_prep/    de Chula a recortes: descarga, filtro, recorte, aumentos, EDA de las fotos
+├── detector/     YOLO: entrenamiento, recortes de lo que detecta, comparación de modelos
+├── ml/           rama ML: embeddings DINOv2, EDA de embeddings, modelado
+├── dl/           rama DL: CNN, VGG16, EfficientNet, ViT, Grad-CAM
+└── app/          app offline (ONNX + interfaz local)
+```
+
+```
+foto → data_prep → data/ ─┬─ detector (YOLO) → recortes ─┬─ ml (DINOv2 + ML clásico)
+                          └──────────────────────────────┴─ dl (CNN / VGG16 / red liviana / ViT)
+                                                          → app (conteo por lámina)
 ```
 
 ## Entorno
 
 - **Mac (desarrollo):** conda `machine-learning-test` (Python 3.14, torch con MPS).
 - **Apolo III (entrenamiento):** partición `accel` (2× H100). Los nodos de cómputo no
-  tienen internet: descargar datos y pesos desde el nodo de login.
+  tienen internet: descargar datos y pesos desde el nodo de login. Los `sbatch` se lanzan
+  desde la raíz del repo y cada uno escribe su log en `logs/<componente>/<trabajo>-<id>.out`
+  (`#SBATCH --output`), así que no quedan `slurm-*.out` sueltos en la raíz.
 
 ```bash
 pip install -r requirements.txt
@@ -56,7 +61,7 @@ Todos los comandos se corren desde la raíz del repo.
    `python3`; en Apolo se corre desde el nodo de login:
    ```bash
    export ROBOFLOW_API_KEY=...   # nunca se commitea
-   bash src/data/download_chula.sh data/roboflow
+   bash data_prep/src/download_chula.sh data/roboflow
    ```
    El script no sobrescribe: si `data/roboflow` ya tiene archivos, se detiene. Descarga y
    descomprime en una carpeta temporal, verifica que estén `data.yaml` y los tres splits,
@@ -65,7 +70,7 @@ Todos los comandos se corren desde la raíz del repo.
 2. **Filtrar a 3 clases y particionar** (70/15/15 por foto original, seed 42; YOLO +
    COCO; solo usa la librería estándar):
    ```bash
-   python3 src/data/filter_classes.py --src data/roboflow --dst data/raw
+   python3 data_prep/src/filter_classes.py --src data/roboflow --dst data/raw
    ```
    Resultado esperado — fotos por split:
 
@@ -81,20 +86,20 @@ Todos los comandos se corren desde la raíz del repo.
 3. **Recortar cada huevo** (margen 15 %, formato ImageFolder + `crops.csv`; necesita
    `pillow` y `pyyaml` de `requirements.txt`):
    ```bash
-   python3 src/data/crop_eggs.py --raw data/raw --out data/crops --margin 0.15
+   python3 data_prep/src/crop_eggs.py --raw data/raw --out data/crops --margin 0.15
    ```
 4. **Embeddings DINOv2** (rama ML):
    ```bash
-   python3 src/embeddings/extract_embeddings.py --crops-csv data/crops/crops.csv \
-     --model dinov2_vitb14 --out-dir artifacts/embeddings
+   python3 ml/src/extract_embeddings.py --crops-csv data/crops/crops.csv \
+     --model dinov2_vitb14 --out-dir ml/outputs/embeddings
    ```
-   → `artifacts/embeddings/dinov2_vitb14_224.npz` con `cls` y `patch_mean`, alineados
+   → `ml/outputs/embeddings/dinov2_vitb14_224.npz` con `cls` y `patch_mean`, alineados
    con `labels`, `splits` y `groups` (foto original, para `StratifiedGroupKFold`).
 
-**Análisis exploratorio:** [`notebooks/eda_dataset.ipynb`](notebooks/eda_dataset.ipynb) (después de
+**Análisis exploratorio:** [`data_prep/notebooks/eda_dataset.ipynb`](data_prep/notebooks/eda_dataset.ipynb) (después de
 los pasos 1 y 2; sin GPU, ~2 min en el nodo de login de Apolo):
 ```bash
-jupyter nbconvert --to notebook --execute --inplace notebooks/eda_dataset.ipynb
+jupyter nbconvert --to notebook --execute --inplace data_prep/notebooks/eda_dataset.ipynb
 ```
 
 ## Reglas

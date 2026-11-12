@@ -7,7 +7,7 @@ Prof. Yomin Estiven Jaramillo Munera. Nota: entrega oportuna 50 % + presentació
 | Entrega del 3-nov | **3-nov-2026** | **Por confirmar qué se entrega** | — |
 | Video demo (2 min: modelo desplegado + interfaz) | **19-nov-2026** (por confirmar) | — | enlace aquí |
 | Repositorio (documentación y justificación de decisiones) | 19-nov-2026 | En curso | este repo |
-| `model_development.ipynb` | 19-nov-2026 | — | [`notebooks/`](../../../notebooks/) |
+| `model_development.ipynb` | 19-nov-2026 | — | [`ml/notebooks/`](../../../ml/notebooks/) |
 | Presentación final | — | — | `presentacion/` |
 
 ## Checklist de requisitos

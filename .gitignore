@@ -4,7 +4,7 @@ data/*
 *.zip
 
 # --- Generated artifacts: embeddings, weights, training runs, exports ---
-artifacts/
+outputs/
 runs/
 weights/
 *.pt
@@ -20,7 +20,11 @@ mlruns/
 wandb/
 slurm-*.out
 slurm-*.err
-logs/
+# logs/<component>/ folders are versioned (empty, with .gitkeep) because the sbatch
+# scripts write there with #SBATCH --output, which needs the folder to exist; the logs are not.
+logs/**
+!logs/**/
+!logs/**/.gitkeep
 
 # --- Secrets (ROBOFLOW_API_KEY etc. go in env vars, never in the repo) ---
 .env

@@ -268,6 +268,11 @@ Protocolo de captura por lámina:
   anonimización y aprobación de un comité de ética.
 - Meta mínima: 20–30 fotos con huevo + negativos. **Solo evaluación.**
 
+**[Decidido 2026-11-11]** La evaluación externa del proyecto usa **solo fotos con huevos**. Las
+fotos sin huevos (`data/external/Control/` y `a-image3.png`) quedan fuera: no se copian al
+conjunto externo ni entran en `external.csv` (ver §14). Los originales se conservan en
+`data/external/Control/`.
+
 **[Decisión de Claude] Verdad de referencia.** El equipo dibuja las cajas (Roboflow
 Annotate o labelme) guiándose por el conteo del experto, que valida las dudosas. Con cajas
 + especie por huevo el set externo mide recall de detección, clasificación por huevo y
@@ -333,8 +338,8 @@ contra la cabeza de clasificación del propio YOLO (baseline).
   COCO, fine-tuning a 3 clases (`data/raw/data.yaml`). Tamaño *small* si nano no alcanza.
 - La aumentación *mosaic* (por defecto) le muestra fotos con varios huevos aunque el
   dataset casi siempre tenga uno.
-- "No hay parásito" = sin detecciones por encima del umbral; se calibra con los negativos
-  del set externo.
+- "No hay parásito" = sin detecciones por encima del umbral. Como los negativos externos
+  quedaron fuera de la evaluación (§5.7, §14), el umbral no se calibra con ellos.
 
 ### 6.2 Rama ML — embeddings + ML clásico (curso de Machine Learning)
 
@@ -636,6 +641,8 @@ imágenes de pacientes).
 | 2026-10-27 | Clase "otro / sin parásito", Grad-CAM, detector de atajos, criterios de éxito (de la ficha). | Incorporado |
 | 2026-10-27 | Corregir duplicados por reflejo con la opción A. | Descartado (la fuente nueva no tiene reflejos) |
 | 2026-10-27 | DINOv2-S vs B; red liviana EfficientNet-B0 / MobileNetV3. | Propuesta |
+| 2026-11-09 | Transfer learning (`dl/notebooks/transfer_learning.ipynb`): VGG16 de ImageNet sin sus 3 capas densas, con la cabeza de la CNN base (promedio global + dropout 0,3 + lineal), unos 14,7 M de parámetros. Receta de §6.3: fase 1 solo la cabeza (5 épocas, lr 1e-3); fase 2 bloques 4–5 descongelados (hasta 30 épocas, lr 1e-4 → 1e-5, paciencia 10). Mismos aumentos (`mid`), split y semillas que la CNN base. EfficientNet-B0 con el mismo notebook (`ARCH`). | Propuesta |
+| 2026-11-11 | Evaluación externa solo con fotos con huevos: las de `Control/` (35 campos sin huevos) y `a-image3.png` salen de `external.csv` y de los notebooks; `build_external_csv.py` ignora esas carpetas. El flujo no contempla fotos sin huevos. Consecuencia: la tasa de falsas alarmas en campos vacíos ya no se mide. | Decidido |
 
 ---
 

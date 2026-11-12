@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conteo de geohelmintos</title>
+<style>
+  /* Offline page: system fonts only. Layout: photo + eggs side by side, then the sample log and its result. */
+  :root {
+    --bg: #f3f6f5;
+    --card: #ffffff;
+    --fg: #16211f;
+    --muted: #5b6b67;
+    --line: #d8e1de;
+    --accent: #1d6e69;
+    --ok: #16a34a;
+    --review: #d97706;
+    --mild: #ca8a04;
+    --moderate: #ea580c;
+    --severe: #dc2626;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font); }
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 20px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+  h2 { margin: 0 0 12px; font-size: 17px; }
+  .sub { color: var(--muted); margin: 4px 0 0; }
+  .chip { border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 3px 12px; font-size: 13px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
+  .step { color: var(--accent); font-family: var(--mono); font-size: 13px; margin-right: 6px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+  .drop { margin-top: 12px; border: 2px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; cursor: pointer; color: var(--muted); }
+  .drop.over { border-color: var(--accent); background: #eef6f5; }
+  .drop b { color: var(--fg); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+  button { font: inherit; font-weight: 600; border-radius: 6px; padding: 8px 16px; border: 1px solid var(--accent); background: var(--card); color: var(--accent); cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button:focus-visible, .drop:focus-visible { outline: 3px solid #9fd4cf; outline-offset: 2px; }
+  .status { color: var(--muted); font-size: 14px; }
+  .preview { margin-top: 14px; background: #0f1514; border-radius: 8px; min-height: 260px; display: grid; place-items: center; overflow: hidden; }
+  .preview img { max-width: 100%; max-height: 560px; display: block; }
+  .preview span { color: #94a3a0; padding: 24px; text-align: center; }
+  .eggs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .egg { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .egg .n { font-family: var(--mono); color: var(--muted); }
+  .egg .sp { font-weight: 600; }
+  .bar { height: 6px; background: #e7ecea; border-radius: 3px; margin-top: 4px; position: relative; }
+  .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--ok); }
+  .bar.rev i { background: var(--review); }
+  .bar .th { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--fg); opacity: 0.35; }
+  .badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge.ok { background: #dcfce7; color: #166534; }
+  .badge.rev { background: #fef3c7; color: #92400e; }
+  .msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+  .msg.warn { background: #fef3c7; color: #78350f; border: 1px solid #fcd34d; }
+  .msg.info { background: #eef6f5; color: #134e4a; border: 1px solid #b7dcd8; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.num, th.num { text-align: right; }
+  td.rev { color: var(--review); font-weight: 700; }
+  tfoot td { font-weight: 700; border-bottom: none; }
+  .x { border: none; color: var(--muted); padding: 2px 8px; }
+  .empty { color: var(--muted); padding: 14px 0; }
+  .species { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 700px) { .species { grid-template-columns: 1fr; } }
+  .sp-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 6px; }
+  .sp-card h3 { margin: 0; font-size: 15px; font-style: italic; }
+  .sp-card .big { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sp-card .meta { color: var(--muted); font-size: 13px; }
+  .level { justify-self: start; font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 999px; color: #fff; }
+  .level.neg { background: #94a3a0; }
+  .level.mild { background: var(--mild); }
+  .level.moderate { background: var(--moderate); }
+  .level.severe { background: var(--severe); }
+  .note { color: var(--muted); font-size: 13px; max-width: 90ch; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <div>
+      <h1>Conteo de geohelmintos</h1>
+      <p class="sub">YOLO detecta los huevos y EfficientNet-B0 identifica la especie. Demostración del proyecto.</p>
+    </div>
+    <span class="chip">Herramienta de apoyo, no es un diagnóstico</span>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <h2><span class="step">1</span>Foto del microscopio</h2>
+      <label for="sample">Muestra o lámina</label>
+      <input id="sample" type="text" value="Muestra 1">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Elegir foto">
+        <b>Arrastra una foto aquí</b> o haz clic para elegirla<br>
+        <span id="fname">JPG o PNG, foto por el ocular</span>
+      </div>
+      <input id="file" type="file" accept="image/*" hidden>
+      <div class="row">
+        <button id="analyze" class="primary" disabled>Analizar foto</button>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="preview" id="preview"><span>Aquí aparece la foto con los huevos marcados</span></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">2</span>Huevos en esta foto</h2>
+      <ul class="eggs" id="eggs"><li class="empty">Todavía no hay una foto analizada.</li></ul>
+      <div id="photoMsg"></div>
+      <div class="row">
+        <button id="save" disabled>Guardar en la muestra</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>Registro de la muestra <span class="status" id="sampleName"></span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Foto</th><th>Archivo</th><th class="num">Ascaris</th><th class="num">Uncinarias</th><th class="num">Trichuris</th><th class="num">Por revisar</th><th></th></tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+        <tfoot id="logFoot"></tfoot>
+      </table>
+    </div>
+    <div class="row">
+      <button id="csv" disabled>Exportar CSV</button>
+      <button id="reset">Nueva muestra</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>Resultado de la muestra</h2>
+    <div id="sampleMsg"></div>
+    <div class="species" id="species"></div>
+    <p class="note">HPG (huevos por gramo) = huevos contados × 24, por la plantilla de 41,7 mg de Kato-Katz. Solo es una estimación válida si las fotos recorren toda la lámina sin repetir campos. Categorías de intensidad de la OMS en HPG: <i>Ascaris</i> leve 1–4.999, moderada 5.000–49.999, grave ≥ 50.000; <i>Trichuris</i> leve 1–999, moderada 1.000–9.999, grave ≥ 10.000; uncinarias leve 1–1.999, moderada 2.000–3.999, grave ≥ 4.000. La confianza es la probabilidad que da el modelo (no está calibrada): por debajo de 65 % el huevo se marca para revisión.</p>
+  </section>
+</main>
+
+<script>
+const SPECIES = {
+  ascaris:   { name: 'Ascaris lumbricoides', short: 'Ascaris',   moderate: 5000, severe: 50000 },
+  hookworm:  { name: 'Uncinarias',           short: 'Uncinaria', moderate: 2000, severe: 4000 },
+  trichuris: { name: 'Trichuris trichiura',  short: 'Trichuris', moderate: 1000, severe: 10000 },
+};
+const ORDER = ['ascaris', 'hookworm', 'trichuris'];
+const KATO_KATZ = 24;
+
+const $ = (id) => document.getElementById(id);
+let file = null, last = null, log = [], photoCount = 0;
+
+function el(tag, props = {}, ...kids) {
+  const node = Object.assign(document.createElement(tag), props);
+  for (const k of kids) node.append(k);
+  return node;
+}
+const pct = (x) => `${Math.round(x * 100)} %`;
+const fmt = (n) => n.toLocaleString('es-CO');
+
+function pick(f) {
+  if (!f) return;
+  file = f;
+  $('fname').textContent = f.name;
+  $('analyze').disabled = false;
+  $('status').textContent = '';
+}
+$('drop').addEventListener('click', () => $('file').click());
+$('drop').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
+$('file').addEventListener('change', (e) => pick(e.target.files[0]));
+['dragover', 'dragenter'].forEach((t) => $('drop').addEventListener(t, (e) => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach((t) => $('drop').addEventListener(t, () => $('drop').classList.remove('over')));
+$('drop').addEventListener('drop', (e) => { e.preventDefault(); pick(e.dataTransfer.files[0]); });
+
+$('analyze').addEventListener('click', async () => {
+  if (!file) return;
+  $('analyze').disabled = true; $('save').disabled = true;
+  $('status').textContent = 'Analizando…';
+  try {
+    const res = await fetch('/analyze', { method: 'POST', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    last = { ...data, fileName: file.name };
+    showPhoto(last);
+    $('status').textContent = `${data.eggs.length} huevo(s) detectado(s)`;
+    $('save').disabled = false;
+  } catch (err) {
+    $('status').textContent = `Error: ${err.message}`;
+  } finally {
+    $('analyze').disabled = false;
+  }
+});
+
+function showPhoto(r) {
+  $('preview').replaceChildren(el('img', { src: r.image, alt: `Foto ${r.fileName} con los huevos detectados` }));
+  const list = $('eggs');
+  list.replaceChildren();
+  if (!r.eggs.length) list.append(el('li', { className: 'empty', textContent: 'No se detectaron huevos en esta foto.' }));
+  for (const egg of r.eggs) {
+    const bar = el('div', { className: 'bar' + (egg.review ? ' rev' : '') });
+    bar.append(el('i', { style: `width:${(egg.confidence * 100).toFixed(1)}%` }), el('span', { className: 'th', style: `left:${r.review_below * 100}%` }));
+    list.append(el('li', { className: 'egg' },
+      el('span', { className: 'n', textContent: egg.n }),
+      el('div', {}, el('div', { className: 'sp', textContent: `${SPECIES[egg.species].name} · ${pct(egg.confidence)}` }), bar),
+      el('span', { className: 'badge ' + (egg.review ? 'rev' : 'ok'), textContent: egg.review ? 'Revisar' : 'Confiable' })));
+  }
+  const nRev = r.eggs.filter((e) => e.review).length;
+  $('photoMsg').replaceChildren(nRev
+    ? el('div', { className: 'msg warn', textContent: `No estoy seguro de ${nRev} huevo(s): la confianza es menor a ${pct(r.review_below)}. Necesita revisión de un profesional.` })
+    : r.eggs.length ? el('div', { className: 'msg info', textContent: 'Todos los huevos superan el 65 % de confianza.' }) : '');
+}
+
+$('save').addEventListener('click', () => {
+  if (!last) return;
+  const counts = Object.fromEntries(ORDER.map((s) => [s, last.eggs.filter((e) => e.species === s).length]));
+  log.push({ n: ++photoCount, file: last.fileName, ...counts, review: last.eggs.filter((e) => e.review).length });
+  last = null;
+  $('save').disabled = true;
+  $('status').textContent = 'Guardada en la muestra.';
+  render();
+});
+
+$('reset').addEventListener('click', () => {
+  if (log.length && !confirm('¿Empezar una muestra nueva? Se borra el registro actual.')) return;
+  log = []; photoCount = 0;
+  const m = $('sample').value.match(/^(.*?)(\d+)$/);
+  if (m) $('sample').value = m[1] + (Number(m[2]) + 1);
+  render();
+});
+$('sample').addEventListener('input', render);
+
+$('csv').addEventListener('click', () => {
+  const head = ['muestra', 'foto', 'archivo', 'ascaris', 'uncinarias', 'trichuris', 'por_revisar'];
+  const q = (v) => `"${String(v).replaceAll('"', '""')}"`;
+  const lines = [head.join(','), ...log.map((r) => [q($('sample').value), r.n, q(r.file), r.ascaris, r.hookworm, r.trichuris, r.review].join(','))];
+  const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  el('a', { href: url, download: `${$('sample').value || 'muestra'}.csv` }).click();
+  URL.revokeObjectURL(url);
+});
+
+function intensity(hpg, sp) {
+  if (hpg === 0) return ['Negativo', 'neg'];
+  if (hpg < sp.moderate) return ['Leve', 'mild'];
+  if (hpg < sp.severe) return ['Moderada', 'moderate'];
+  return ['Grave', 'severe'];
+}
+
+function render() {
+  $('sampleName').textContent = `· ${$('sample').value} · ${log.length} foto(s)`;
+  const body = $('logBody');
+  body.replaceChildren();
+  if (!log.length) body.append(el('tr', {}, el('td', { colSpan: 7, className: 'empty', textContent: 'Analiza una foto y pulsa «Guardar en la muestra».' })));
+  for (const r of log) {
+    const del = el('button', { className: 'x', textContent: '×', title: 'Quitar esta foto' });
+    del.addEventListener('click', () => { log = log.filter((x) => x !== r); render(); });
+    body.append(el('tr', {},
+      el('td', { textContent: r.n }), el('td', { textContent: r.file }),
+      el('td', { className: 'num', textContent: r.ascaris }), el('td', { className: 'num', textContent: r.hookworm }),
+      el('td', { className: 'num', textContent: r.trichuris }),
+      el('td', { className: 'num' + (r.review ? ' rev' : ''), textContent: r.review }), el('td', {}, del)));
+  }
+  const tot = Object.fromEntries([...ORDER, 'review'].map((k) => [k, log.reduce((a, r) => a + r[k], 0)]));
+  $('logFoot').replaceChildren(log.length ? el('tr', {}, el('td', { textContent: 'Total' }), el('td'),
+    el('td', { className: 'num', textContent: tot.ascaris }), el('td', { className: 'num', textContent: tot.hookworm }),
+    el('td', { className: 'num', textContent: tot.trichuris }), el('td', { className: 'num', textContent: tot.review }), el('td')) : '');
+  $('csv').disabled = !log.length;
+
+  $('species').replaceChildren(...ORDER.map((s) => {
+    const sp = SPECIES[s], hpg = tot[s] * KATO_KATZ, [label, cls] = intensity(hpg, sp);
+    return el('div', { className: 'sp-card' },
+      el('h3', { textContent: sp.name }),
+      el('div', { className: 'big', textContent: `${fmt(hpg)} HPG` }),
+      el('div', { className: 'meta', textContent: `${tot[s]} huevo(s) × ${KATO_KATZ}` }),
+      el('span', { className: 'level ' + cls, textContent: `Intensidad: ${label}` }));
+  }));
+  $('sampleMsg').replaceChildren(!log.length ? ''
+    : tot.review ? el('div', { className: 'msg warn', textContent: `${tot.review} huevo(s) de esta muestra tienen confianza menor a 65 %. El resultado es provisional: necesita revisión de un profesional.` })
+    : el('div', { className: 'msg info', textContent: 'Todos los huevos de la muestra superan el 65 % de confianza. Aun así, la confirmación la hace un profesional.' }));
+}
+render();
+</script>
+</body>
+</html>

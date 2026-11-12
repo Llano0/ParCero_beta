@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="196" viewBox="0 0 1180 196" role="img"
+           aria-label="Interior de un bloque: convolución 3 por 3, BatchNorm, ReLU, convolución 3 por 3, BatchNorm, ReLU y MaxPool 2 por 2, que deja la mitad del tamaño. Un atajo residual se probó y se descartó.">
+<style>
+  .ink { fill: #15211f; }
+  .dim { fill: #5d6d69; }
+  .t { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
+  .tm { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
+  .tb { font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; }
+  .stroke { stroke: #15211f; fill: none; stroke-width: 1.4; }
+  .stroke-dim { stroke: #5d6d69; fill: none; stroke-width: 1.2; }
+  .map { fill: #1d6e69; }
+  .map-edge { stroke: #1d6e69; fill: none; stroke-width: 1; }
+  .head { fill: #b06a12; }
+  .head-edge { stroke: #b06a12; fill: #ffffff; stroke-width: 1.5; }
+  .head-hollow { stroke: #b06a12; fill: none; stroke-width: 1.2; stroke-dasharray: 2 2; }
+  .box { fill: #ffffff; stroke: #15211f; stroke-width: 1.2; }
+  .box-map { fill: #ffffff; stroke: #1d6e69; stroke-width: 2; }
+  .box-head { fill: #ffffff; stroke: #b06a12; stroke-width: 2; }
+  .mk-ink { fill: #15211f; }
+  .mk-dim { fill: #5d6d69; }
+</style>
+<rect width="1180" height="196" fill="#ffffff"/>
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" class="mk-ink"/>
+          </marker>
+          <marker id="arr2dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" class="mk-dim"/>
+          </marker>
+        </defs>
+
+        <!-- discarded residual shortcut -->
+        <path d="M100,96 V52 H779 V82" class="stroke-dim" stroke-dasharray="5 4"/>
+        <polygon points="774,82 784,82 779,91" class="mk-dim"/>
+        <text x="440" y="44" text-anchor="middle" class="t dim">atajo residual 1×1: se probó en la búsqueda y se descartó</text>
+
+        <!-- sub-group labels -->
+        <text x="309" y="84" text-anchor="middle" class="t dim">conv1</text>
+        <text x="657" y="84" text-anchor="middle" class="t dim">conv2</text>
+
+        <!-- input -->
+        <text x="128" y="112" text-anchor="end" class="t ink">entrada</text>
+        <text x="128" y="128" text-anchor="end" class="tm dim">Cin × H × W</text>
+
+        <!-- operations -->
+        <rect x="150" y="94" width="96" height="44" rx="3" class="box-map"/>
+        <rect x="274" y="94" width="96" height="44" rx="3" class="box"/>
+        <rect x="398" y="94" width="70" height="44" rx="3" class="box"/>
+        <rect x="496" y="94" width="96" height="44" rx="3" class="box-map"/>
+        <rect x="620" y="94" width="96" height="44" rx="3" class="box"/>
+        <rect x="744" y="94" width="70" height="44" rx="3" class="box"/>
+        <rect x="842" y="94" width="110" height="44" rx="3" class="box-head"/>
+        <g class="tb ink" text-anchor="middle">
+          <text x="198" y="121">Conv 3×3</text>
+          <text x="322" y="121">BatchNorm</text>
+          <text x="433" y="121">ReLU</text>
+          <text x="544" y="121">Conv 3×3</text>
+          <text x="668" y="121">BatchNorm</text>
+          <text x="779" y="121">ReLU</text>
+          <text x="897" y="121">MaxPool 2×2</text>
+        </g>
+
+        <g class="stroke">
+          <line x1="132" y1="116" x2="146" y2="116" marker-end="url(#arr2)"/>
+          <line x1="250" y1="116" x2="270" y2="116" marker-end="url(#arr2)"/>
+          <line x1="374" y1="116" x2="394" y2="116" marker-end="url(#arr2)"/>
+          <line x1="472" y1="116" x2="492" y2="116" marker-end="url(#arr2)"/>
+          <line x1="596" y1="116" x2="616" y2="116" marker-end="url(#arr2)"/>
+          <line x1="720" y1="116" x2="740" y2="116" marker-end="url(#arr2)"/>
+          <line x1="818" y1="116" x2="838" y2="116" marker-end="url(#arr2)"/>
+          <line x1="956" y1="116" x2="976" y2="116" marker-end="url(#arr2)"/>
+        </g>
+
+        <!-- output -->
+        <text x="984" y="112" class="t ink">salida</text>
+        <text x="984" y="128" class="tm dim">Cout × H/2 × W/2</text>
+
+        <!-- notes under the boxes -->
+        <g class="t dim" text-anchor="middle">
+          <text x="198" y="160">Cin → Cout</text>
+          <text x="198" y="176">padding 1, sin sesgo</text>
+          <text x="544" y="160">Cout → Cout</text>
+          <text x="544" y="176">padding 1, sin sesgo</text>
+          <text x="897" y="160">alto y ancho</text>
+          <text x="897" y="176">a la mitad</text>
+        </g>
+      </svg>
